@@ -51,8 +51,10 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
     public void handle(KeyEvent event) {
         switch (event.getCode()){
             case LEFT:
-                m.move(-1,0);
-                redraw();
+                if(m.checkLeft()) {
+                    m.move(-1, 0);
+                    redraw();
+                }
                 break;
             case RIGHT:
                 if(m.checkRight()) {

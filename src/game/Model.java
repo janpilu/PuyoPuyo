@@ -198,12 +198,19 @@ public class Model {
 
     public boolean checkLeft() {
         switch (state){
+            case VTO:
             case HOT:
-                break;
-            case HTO:
+                if(!checkx(this.curPuyo.getPuyo1().getX()-1))
+                    return false;
+                if(map[this.curPuyo.getPuyo1().getX()-1][this.curPuyo.getPuyo1().getY()].getClass() == Puyo.class)
+                    return false;
                 break;
             case VOT:
-            case VTO:
+            case HTO:
+                if(!checkx(this.curPuyo.getPuyo2().getX()-1))
+                    return false;
+                if(map[this.curPuyo.getPuyo2().getX()-1][this.curPuyo.getPuyo2().getY()].getClass() == Puyo.class)
+                    return false;
                 break;
         }
         return true;
@@ -213,11 +220,15 @@ public class Model {
         switch (state){
             case VOT:
             case HOT:
+                if(!checkx(this.curPuyo.getPuyo2().getX()+1))
+                    return false;
                 if(map[this.curPuyo.getPuyo2().getX()+1][this.curPuyo.getPuyo2().getY()].getClass() == Puyo.class)
                     return false;
                 break;
             case VTO:
             case HTO:
+                if(!checkx(this.curPuyo.getPuyo1().getX()+1))
+                    return false;
                 if(map[this.curPuyo.getPuyo1().getX()+1][this.curPuyo.getPuyo1().getY()].getClass() == Puyo.class)
                     return false;
                 break;
