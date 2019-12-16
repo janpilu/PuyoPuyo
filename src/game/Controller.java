@@ -67,12 +67,16 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
                 redraw();
                 break;
             case E:
-                m.turn(false);
-                redraw();
+                if(this.m.getCurPuyo().getPuyo1().getY()>1) {
+                    m.turn(false);
+                    redraw();
+                }
                 break;
             case R:
-                m.turn(true);
-                redraw();
+                if(this.m.getCurPuyo().getPuyo1().getY()>1) {
+                    m.turn(true);
+                    redraw();
+                }
                 break;
         }
         this.m.checkBelow();

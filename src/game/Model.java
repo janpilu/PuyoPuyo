@@ -11,7 +11,6 @@ public class Model {
     private int y;
     private PuyoPairState state;
     private List<Puyo> puyos;
-
     private PuyoPair curPuyo;
     private int curPosX;
     private int curPosY;
@@ -88,11 +87,11 @@ public class Model {
     }
 
     public void turnMove(int x, int y, int xo, int yo){
-        if(checkx(x)&&checky(y)){
-            remPuyo(xo,yo);
+        if (checkx(x) && checky(y)) {
+            remPuyo(xo, yo);
             this.curPuyo.getPuyo1().setX(x);
             this.curPuyo.getPuyo1().setY(y);
-            setPuyo(x,y,1);
+            setPuyo(x, y, 1);
         }
     }
 
@@ -111,12 +110,14 @@ public class Model {
                     newX = this.curPuyo.getPuyo1().getX() + 1;
                     newY = this.curPuyo.getPuyo1().getY() + 1;
                 }
-                if(checkx(newX)&&checky(newY)) {
-                    turnMove(newX, newY, oldx, oldy);
-                    if (clock)
-                        this.state = VOT;
-                    else
-                        this.state = VTO;
+                if(!checkFieldForPuyo(newX,newY)) {
+                    if (checkx(newX) && checky(newY)) {
+                        turnMove(newX, newY, oldx, oldy);
+                        if (clock)
+                            this.state = VOT;
+                        else
+                            this.state = VTO;
+                    }
                 }
                 break;
             case HTO:
@@ -143,12 +144,14 @@ public class Model {
                     newX = this.curPuyo.getPuyo1().getX() - 1;
                     newY = this.curPuyo.getPuyo1().getY() + 1;
                 }
-                if(checkx(newX)&&checky(newY)) {
-                    turnMove(newX, newY, oldx, oldy);
-                    if (clock)
-                        this.state = HTO;
-                    else
-                        this.state = HOT;
+                if(!checkFieldForPuyo(newX,newY)) {
+                    if (checkx(newX) && checky(newY)) {
+                        turnMove(newX, newY, oldx, oldy);
+                        if (clock)
+                            this.state = HTO;
+                        else
+                            this.state = HOT;
+                    }
                 }
                 break;
             case VTO:
@@ -159,12 +162,14 @@ public class Model {
                     newX = this.curPuyo.getPuyo1().getX() + 1;
                     newY = this.curPuyo.getPuyo1().getY() - 1;
                 }
-                if(checkx(newX)&&checky(newY)) {
-                    turnMove(newX, newY, oldx, oldy);
-                    if (clock)
-                        this.state = HOT;
-                    else
-                        this.state = HTO;
+                if(!checkFieldForPuyo(newX,newY)) {
+                    if (checkx(newX) && checky(newY)) {
+                        turnMove(newX, newY, oldx, oldy);
+                        if (clock)
+                            this.state = HOT;
+                        else
+                            this.state = HTO;
+                    }
                 }
                 break;
         }
@@ -214,6 +219,12 @@ public class Model {
                 break;
         }
         return true;
+    }
+
+    public boolean checkFieldForPuyo(int x,int y){
+        if(map[x][y].getClass()==Puyo.class)
+            return true;
+        return false;
     }
 
     public boolean checkRight() {
@@ -283,5 +294,9 @@ public class Model {
 
     public void setY(int y) {
         this.y = y;
+    }
+
+    public PuyoPair getCurPuyo() {
+        return curPuyo;
     }
 }
