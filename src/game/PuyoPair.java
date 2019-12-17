@@ -7,8 +7,11 @@ public class PuyoPair {
     private Puyo puyo2;
 
     public PuyoPair(){
-        this.puyo1 = new Puyo(5,0, Color.RED);
-        this.puyo2 = new Puyo(6,0, Color.BLUE);
+        int r1 = (int)(Math.random() * ((5 - 1) + 1)) + 1;
+        int r2 = (int)(Math.random() * ((5 - 1) + 1)) + 1;
+        System.out.println(r1+" "+r2);
+        this.puyo1 = new Puyo(5,0, r1);
+        this.puyo2 = new Puyo(6,0, r2);
     }
 
     public void turnLeft(){

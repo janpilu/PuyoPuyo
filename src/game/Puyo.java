@@ -2,6 +2,7 @@ package game;
 
 import javafx.scene.shape.Rectangle;
 import javafx.scene.paint.Color;
+import static game.ColorPuyo.*;
 
 
 public class Puyo extends Field {
@@ -9,15 +10,34 @@ public class Puyo extends Field {
     private ColorPuyo c;
     private int x;
     private int y;
-    private Color color;
     private Rectangle body;
 
-    public Puyo(int x, int y, Color c){
+    public Puyo(int x, int y, int c){
         super(x,y);
-        this.floating = true;
-        color = c;
         body = getB();
-        body.setFill(color);
+        switch (c){
+            case 1:
+                this.c = RED;
+                body.setFill(Color.RED);
+                break;
+            case 2:
+                this.c = BLUE;
+                body.setFill(Color.BLUE);
+                break;
+            case 3:
+                this.c = GREEN;
+                body.setFill(Color.GREEN);
+                break;
+            case 4:
+                this.c = YELLOW;
+                body.setFill(Color.YELLOW);
+                break;
+            case 5:
+                this.c = PURPLE;
+                body.setFill(Color.PURPLE);
+                break;
+        }
+        this.floating = true;
         setB(body);
         this.x = x;
         this.y = y;
@@ -41,12 +61,12 @@ public class Puyo extends Field {
         this.y = y;
     }
 
-    public Color getColor() {
-        return color;
+    public ColorPuyo getColor() {
+        return c;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
+    public void setColor(ColorPuyo c) {
+        this.c = c;
     }
 
     public Rectangle getBody() {
