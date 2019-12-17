@@ -1,5 +1,6 @@
 package game;
 
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -8,6 +9,7 @@ import javafx.scene.layout.GridPane;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.concurrent.TimeUnit;
 
 public class Controller implements Initializable, EventHandler<KeyEvent> {
 
@@ -21,7 +23,39 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         m = new Model();
         initFileds();
         m.newPuyoPair();
+        m.drop();
+        refresh();
         redraw();
+    }
+
+    public void refresh(){
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                Runnable updater = new Runnable() {
+
+                    @Override
+                    public void run() {
+                        redraw();
+                    }
+                };
+
+                while (true) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                    }
+
+                    // UI update is run on the Application thread
+                    Platform.runLater(updater);
+                }
+            }
+
+        });
+        // don't let thread prevent JVM shutdown
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void initFileds() {
@@ -45,6 +79,7 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
                 this.root.add(temp,x,y);
             }
         }
+        this.m.checkBelow();
     }
 
     @Override
@@ -79,6 +114,6 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
                 }
                 break;
         }
-        this.m.checkBelow();
+        //this.m.checkBelow();
     }
 }
