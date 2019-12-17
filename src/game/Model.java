@@ -1,6 +1,8 @@
 package game;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static game.PuyoPairState.*;
 
@@ -10,7 +12,8 @@ public class Model {
     public int x;
     private int y;
     private PuyoPairState state;
-    private List<Puyo> puyos;
+    private List<Puyo> checked;
+    private List<Puyo> toCheck;
     private PuyoPair curPuyo;
     private int curPosX;
     private int curPosY;
@@ -19,25 +22,40 @@ public class Model {
         this.x =12;
         this.y =24;
 
+        this.checked = new ArrayList<>();
+        this.toCheck = new ArrayList<>();
+
         map = new Field[x][y];
+    }
+
+    public void drop(){
+        Fall f = new Fall(this);
+        new Thread(f).start();
     }
 
     public void newPuyoPair(){
         this.curPuyo = new PuyoPair();
         this.state = HOT;
-        setPuyo(curPuyo.getPuyo1().getX(),curPuyo.getPuyo1().getY(),1);
-        setPuyo(curPuyo.getPuyo2().getX(),curPuyo.getPuyo2().getY(),2);
+        setPuyo(curPuyo.getPuyo1().getX(),curPuyo.getPuyo1().getY(),curPuyo.getPuyo1());
+        setPuyo(curPuyo.getPuyo2().getX(),curPuyo.getPuyo2().getY(),curPuyo.getPuyo2());
     }
 
-    public void setPuyo(int x, int y, int p){
-        if(p==1)
-            this.map[x][y] = curPuyo.getPuyo1();
-        else if(p==2)
-            this.map[x][y] = curPuyo.getPuyo2();
+    public void setPuyo(int x, int y, Puyo p){
+            this.map[x][y] = p;
     }
 
     public void remPuyo(int x, int y){
         this.map[x][y] = new Field(x,y);
+    }
+
+    public void collapse(int x, int y){
+        this.map[x][y] = new Field(x,y);
+        if (this.map[x][y - 1].getClass() == Puyo.class&&y>0) {
+            for (int i = y; i > 0; i--) {
+                if (this.map[x][i].getClass() == Puyo.class)
+                    fastdrop((Puyo) this.map[x][i]);
+            }
+        }
     }
 
     private boolean checky(int y) {
@@ -52,10 +70,6 @@ public class Model {
             return false;
         }
         return true;
-    }
-
-    public void drop(){
-
     }
 
     public void move(int x, int y){
@@ -81,8 +95,8 @@ public class Model {
             remPuyo(oldpuyo1x, oldpuyo1y);
             remPuyo(oldpuyo2x, oldpuyo2y);
 
-            setPuyo(newpuyo1x, newpuyo1y, 1);
-            setPuyo(newpuyo2x, newpuyo2y, 2);
+            setPuyo(newpuyo1x, newpuyo1y, this.curPuyo.getPuyo1());
+            setPuyo(newpuyo2x, newpuyo2y, this.curPuyo.getPuyo2());
         }
     }
 
@@ -91,7 +105,7 @@ public class Model {
             remPuyo(xo, yo);
             this.curPuyo.getPuyo1().setX(x);
             this.curPuyo.getPuyo1().setY(y);
-            setPuyo(x, y, 1);
+            setPuyo(x, y, this.curPuyo.getPuyo1());
         }
     }
 
@@ -175,30 +189,47 @@ public class Model {
         }
     }
 
+    public void chain(List<Field> tokill){
+        tokill.forEach(p->remPuyo(p.getX(),p.getY()));
+    }
+
     public void checkBelow() {
         switch (state){
             case HOT:
             case HTO:
-                if(curPuyo.getPuyo1().getY()==y-1)
-                    newPuyoPair();
+                if(curPuyo.getPuyo1().getY()==y-1) {
+                    bothDown();
+                }
                 if(map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()==Puyo.class)
-                    fastdrop(2);
+                    fastdrop(this.curPuyo.getPuyo2());
                 if(map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()==Puyo.class)
-                    fastdrop(1);
+                    fastdrop(this.curPuyo.getPuyo1());
                 break;
             case VOT:
-                if(curPuyo.getPuyo2().getY()==y-1)
-                    newPuyoPair();
-                if(map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()==Puyo.class)
-                    newPuyoPair();
+                if(curPuyo.getPuyo2().getY()==y-1) {
+                    bothDown();
+                }
+                if(map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()==Puyo.class) {
+                    bothDown();
+                }
                 break;
             case VTO:
-                if(curPuyo.getPuyo1().getY()==y-1)
-                    newPuyoPair();
-                if(map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()==Puyo.class)
-                    newPuyoPair();
+                if(curPuyo.getPuyo1().getY()==y-1) {
+                    bothDown();
+                }
+                if(map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()==Puyo.class) {
+                    bothDown();
+                }
                 break;
         }
+    }
+
+    public void bothDown(){
+        curPuyo.getPuyo1().setFloating(false);
+        curPuyo.getPuyo2().setFloating(false);
+        check(curPuyo.getPuyo1());
+        check(curPuyo.getPuyo2());
+        newPuyoPair();
     }
 
     public boolean checkLeft() {
@@ -246,8 +277,7 @@ public class Model {
         }
         return true;
     }
-
-
+    /**
     private void fastdrop(int i){
         if(i == 1){
             while (map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()!=Puyo.class){
@@ -255,9 +285,16 @@ public class Model {
                 remPuyo(this.curPuyo.getPuyo1().getX(),oldpuyo1y);
                 this.curPuyo.getPuyo1().setY(oldpuyo1y+1);
                 this.setPuyo(this.curPuyo.getPuyo1().getX(),this.curPuyo.getPuyo1().getY(),1);
-                if(this.curPuyo.getPuyo1().getY()+1==y)
+                if(this.curPuyo.getPuyo1().getY()+1==y) {
+                    curPuyo.getPuyo1().setFloating(false);
+                    check(curPuyo.getPuyo1());
+                    check(curPuyo.getPuyo2());
                     break;
+                }
             }
+            curPuyo.getPuyo1().setFloating(false);
+            check(curPuyo.getPuyo1());
+            check(curPuyo.getPuyo2());
             newPuyoPair();
         }else if(i==2){
             while (map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()!=Puyo.class){
@@ -265,11 +302,132 @@ public class Model {
                 remPuyo(this.curPuyo.getPuyo2().getX(),oldpuyo2y);
                 this.curPuyo.getPuyo2().setY(oldpuyo2y+1);
                 this.setPuyo(this.curPuyo.getPuyo2().getX(),this.curPuyo.getPuyo2().getY(),2);
-                if(this.curPuyo.getPuyo2().getY()+1==y)
+                if(this.curPuyo.getPuyo2().getY()+1==y) {
+                    curPuyo.getPuyo2().setFloating(false);
+                    check(curPuyo.getPuyo1());
+                    check(curPuyo.getPuyo2());
                     break;
+                }
             }
+            curPuyo.getPuyo2().setFloating(false);
+            check(curPuyo.getPuyo1());
+            check(curPuyo.getPuyo2());
             newPuyoPair();
         }
+    }
+*/
+    private void fastdrop(Puyo p){
+        while (map[p.getX()][p.getY()+1].getClass()!=Puyo.class){
+            int oldpuyo1y = p.getY();
+            remPuyo(p.getX(),oldpuyo1y);
+            p.setY(oldpuyo1y+1);
+            this.setPuyo(p.getX(),p.getY(),p);
+            if(p.getY()+1==y) {
+                p.setFloating(false);
+                check(p);
+                if(p.equals(this.curPuyo.getPuyo1()))
+                    check(this.curPuyo.getPuyo2());
+                else if(p.equals(this.curPuyo.getPuyo2()))
+                    check(this.curPuyo.getPuyo1());
+                break;
+            }
+        }
+        p.setFloating(false);
+        check(p);
+        if(p.equals(this.curPuyo.getPuyo1()))
+            check(this.curPuyo.getPuyo2());
+        else if(p.equals(this.curPuyo.getPuyo2()))
+            check(this.curPuyo.getPuyo1());
+        newPuyoPair();
+    }
+
+    private void check(Puyo puyo) {
+        this.checked = new ArrayList<>();
+        this.toCheck = new ArrayList<>();
+        this.toCheck.add(puyo);
+        int i = 0;
+        chainStart(i);
+        if(this.checked.size()>=4){
+            this.checked.forEach(p->collapse(p.getX(),p.getY()));
+        }
+    }
+
+    public void chainStart(int i){
+        this.checked.add(toCheck.get(i));
+        int x = toCheck.get(i).getX();
+        int y = toCheck.get(i).getY();
+        chainL(x,y);
+        chainR(x,y);
+        chainU(x,y);
+        chainD(x,y);
+        i++;
+        AtomicBoolean temp = new AtomicBoolean();
+        toCheck.forEach(p->{
+            if(!checked.contains(p))
+                temp.set(true);
+        });
+        if (temp.get()){
+            chainStart(i);
+        }
+    }
+
+    public void chainL(int x, int y){
+        if(x>0){
+            if(map[x-1][y].getClass()==Puyo.class&&((Puyo)map[x-1][y]).getColor()==((Puyo)map[x][y]).getColor()){
+                this.toCheck.add((Puyo)map[x-1][y]);
+                chainL(x-1,y);
+            }
+        }
+    }
+    public void chainR(int x, int y){
+        if(x<this.x-1){
+            if(map[x+1][y].getClass()==Puyo.class&&((Puyo)map[x+1][y]).getColor()==((Puyo)map[x][y]).getColor()){
+                this.toCheck.add((Puyo)map[x+1][y]);
+                chainR(x+1,y);
+            }
+        }
+    }
+    public void chainD(int x, int y){
+        if(y<this.y-1){
+            if(map[x][y+1].getClass()==Puyo.class&&((Puyo)map[x][y+1]).getColor()==((Puyo)map[x][y]).getColor()){
+                this.toCheck.add((Puyo)map[x][y+1]);
+                chainD(x,y+1);
+            }
+        }
+    }
+    public void chainU(int x, int y){
+        if(y>0){
+            if(map[x][y-1].getClass()==Puyo.class&&((Puyo)map[x][y-1]).getColor()==((Puyo)map[x][y]).getColor()){
+                this.toCheck.add((Puyo)map[x][y-1]);
+                chainU(x,y-1);
+            }
+        }
+    }
+
+    public List<Field> getNeighbors(Field cur){
+        List<Field> neighbors = new ArrayList<>();
+        //  f
+        // fXf
+        //  f
+
+        int[] toAdd = {
+                0, 1,
+                -1, 0,
+                1, 0,
+                0,-1
+        };
+
+        for(int i = 0;i<toAdd.length;i++){
+            int toAddX = cur.getX()+toAdd[i];
+            int toAddY = cur.getY()+toAdd[++i];
+            if(toAddX >=0 && toAddX<this.x&&toAddY>=0&&toAddY<this.y){
+                Field temp =map[toAddX][toAddY];
+                if(temp.getClass()==Puyo.class && !((Puyo) temp).isFloating() && ((Puyo) temp).getColor() == ((Puyo) cur).getColor()) {
+                    neighbors.add(temp);
+                }
+            }
+        }
+        return neighbors;
     }
 
     public Field[][] getMap() {
