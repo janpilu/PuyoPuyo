@@ -15,12 +15,16 @@ public class Model {
     private List<Puyo> checked;
     private List<Puyo> toCheck;
     private PuyoPair curPuyo;
-    private int curPosX;
-    private int curPosY;
+    private int score;
+    private boolean loose;
+    private Thread t;
 
     public Model(){
         this.x =12;
         this.y =24;
+
+        this.score = 0;
+        this.loose = false;
 
         this.checked = new ArrayList<>();
         this.toCheck = new ArrayList<>();
@@ -30,7 +34,8 @@ public class Model {
 
     public void drop(){
         Fall f = new Fall(this);
-        new Thread(f).start();
+        this.t = new Thread(f);
+        t.start();
     }
 
     public void newPuyoPair(){
@@ -38,6 +43,17 @@ public class Model {
         this.state = HOT;
         setPuyo(curPuyo.getPuyo1().getX(),curPuyo.getPuyo1().getY(),curPuyo.getPuyo1());
         setPuyo(curPuyo.getPuyo2().getX(),curPuyo.getPuyo2().getY(),curPuyo.getPuyo2());
+        if(map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()== Puyo.class || map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()== Puyo.class)
+            loose();
+    }
+
+    private void loose() {
+        this.loose = true;
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setPuyo(int x, int y, Puyo p){
@@ -348,7 +364,10 @@ public class Model {
         int i = 0;
         chainStart(i);
         if(this.checked.size()>=4){
-            this.checked.forEach(p->collapse(p.getX(),p.getY()));
+            this.checked.forEach(p->{
+                collapse(p.getX(),p.getY());
+                this.score++;
+            });
         }
     }
 
@@ -456,5 +475,21 @@ public class Model {
 
     public PuyoPair getCurPuyo() {
         return curPuyo;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public boolean isLoose() {
+        return loose;
+    }
+
+    public void setLoose(boolean loose) {
+        this.loose = loose;
     }
 }
