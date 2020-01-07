@@ -9,7 +9,6 @@ public class PuyoPair {
     public PuyoPair(){
         int r1 = (int)(Math.random() * ((5 - 1) + 1)) + 1;
         int r2 = (int)(Math.random() * ((5 - 1) + 1)) + 1;
-        System.out.println(r1+" "+r2);
         this.puyo1 = new Puyo(5,0, r1);
         this.puyo2 = new Puyo(6,0, r2);
     }

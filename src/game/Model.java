@@ -15,6 +15,7 @@ public class Model {
     private List<Puyo> checked;
     private List<Puyo> toCheck;
     private PuyoPair curPuyo;
+    private PuyoPair next;
     private int score;
     private boolean loose;
     private Thread t;
@@ -30,6 +31,7 @@ public class Model {
         this.toCheck = new ArrayList<>();
 
         map = new Field[x][y];
+        this.next = new PuyoPair();
     }
 
     public void drop(){
@@ -39,7 +41,8 @@ public class Model {
     }
 
     public void newPuyoPair(){
-        this.curPuyo = new PuyoPair();
+        this.curPuyo = this.next;
+        this.next = new PuyoPair();
         this.state = HOT;
         setPuyo(curPuyo.getPuyo1().getX(),curPuyo.getPuyo1().getY(),curPuyo.getPuyo1());
         setPuyo(curPuyo.getPuyo2().getX(),curPuyo.getPuyo2().getY(),curPuyo.getPuyo2());
@@ -491,5 +494,13 @@ public class Model {
 
     public void setLoose(boolean loose) {
         this.loose = loose;
+    }
+
+    public PuyoPair getNext() {
+        return next;
+    }
+
+    public void setNext(PuyoPair next) {
+        this.next = next;
     }
 }

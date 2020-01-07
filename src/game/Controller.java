@@ -13,6 +13,9 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Handles the users Key Inputs
+ */
 public class Controller implements Initializable, EventHandler<KeyEvent> {
 
     @FXML
@@ -21,15 +24,28 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
     @FXML
     private Text score;
 
+    @FXML
+    private GridPane next;
+
     private Model m;
 
     Thread thread;
 
+    /**
+     * Called after the App is started
+     * calls setup
+     * @param location
+     * @param resources
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setup();
     }
 
+    /**
+     * Initializes the Model and Starts the game
+     * by calling refresh, redraw and the models drop and new PuyoPair
+     */
     public void setup(){
         m = new Model();
         initFileds();
@@ -39,6 +55,9 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         redraw();
     }
 
+    /**
+     * initializes the tread responsible for updating the gameboard, by repeatedly calling the redraw method
+     */
     public void refresh(){
         this.thread = new Thread(new Runnable() {
 
@@ -69,6 +88,9 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         thread.start();
     }
 
+    /**
+     * Creates the initial gameboard with Fields and sets it as the Models map
+     */
     private void initFileds() {
         Field[][] map = new Field[this.m.getX()][this.m.getY()];
         Field temp;
@@ -86,6 +108,7 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         System.out.println(m.isLoose()+"");
         if(m.isLoose())
             loose();
+        setNext();
         this.score.setText("Score: "+m.getScore());
         grid.getChildren().clear();
         for (int x = 0; x < this.m.getX(); x++){
@@ -97,9 +120,17 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         this.m.checkBelow();
     }
 
+    public void setNext(){
+        this.next.getChildren().clear();
+        this.next.add(m.getNext().getPuyo1(),0,0);
+        this.next.add(m.getNext().getPuyo2(),1,0);
+    }
+
     public void loose() {
+        this.m.setLoose(true);
         this.score.setText("Score: "+m.getScore()+" You've Lost!");
         try {
+            thread.interrupt();
             thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
