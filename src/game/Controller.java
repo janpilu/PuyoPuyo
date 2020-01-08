@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Controller implements Initializable, EventHandler<KeyEvent> {
 
+    static final Object lock = new Object();
     @FXML
     private GridPane grid;
 
@@ -104,8 +105,12 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         }
     }
 
+    /**
+     * First checks if the player has lost the game
+     * Displays the next two Puyos
+     * Draws the gameboard according to the models map
+     */
     public void redraw(){
-        System.out.println(m.isLoose()+"");
         if(m.isLoose())
             loose();
         setNext();
@@ -120,12 +125,19 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         this.m.checkBelow();
     }
 
+    /**
+     * Sets the Next two puyos into the next grid
+     */
     public void setNext(){
         this.next.getChildren().clear();
         this.next.add(m.getNext().getPuyo1(),0,0);
         this.next.add(m.getNext().getPuyo2(),1,0);
     }
 
+    /**
+     * Called when Game is lost or closed
+     * Sets the models loose to true, prints the score & loose message and joins the thread
+     */
     public void loose() {
         this.m.setLoose(true);
         this.score.setText("Score: "+m.getScore()+" You've Lost!");
@@ -137,43 +149,47 @@ public class Controller implements Initializable, EventHandler<KeyEvent> {
         }
     }
 
+    /**
+     * Handles the Players Inputs
+     * and calls the corresponding Methods from the model
+     * @param event
+     */
     @Override
     public void handle(KeyEvent event) {
         if (!m.isLoose()) {
-            switch (event.getCode()) {
-                case LEFT:
-                    if (m.checkLeft()) {
-                        m.move(-1, 0);
+            synchronized (Controller.lock) {
+                switch (event.getCode()) {
+                    case LEFT:
+                        if (m.checkLeft()) {
+                            m.move(-1, 0);
+                            redraw();
+                        }
+                        break;
+                    case RIGHT:
+                        if (m.checkRight()) {
+                            m.move(1, 0);
+                            redraw();
+                        }
+                        break;
+                    case DOWN:
+                        m.move(0, 1);
                         redraw();
-                    }
-                    break;
-                case RIGHT:
-                    if (m.checkRight()) {
-                        m.move(1, 0);
-                        redraw();
-                    }
-                    break;
-                case DOWN:
-                    m.move(0, 1);
-                    redraw();
-                    break;
-                case E:
-                    if (this.m.getCurPuyo().getPuyo1().getY() > 1) {
-                        m.turn(false);
-                        redraw();
-                    }
-                    break;
-                case R:
-                    if (this.m.getCurPuyo().getPuyo1().getY() > 1) {
-                        m.turn(true);
-                        redraw();
-                    }
-                    break;
+                        break;
+                    case E:
+                        if (this.m.getCurPuyo().getPuyo1().getY() > 1) {
+                            m.turn(false);
+                            redraw();
+                        }
+                        break;
+                    case R:
+                        if (this.m.getCurPuyo().getPuyo1().getY() > 1) {
+                            m.turn(true);
+                            redraw();
+                        }
+                        break;
+                }
             }
-            //this.m.checkBelow();
         }else
             loose();
-        if (event.isControlDown()&&event.getCode()== KeyCode.R)
-            setup();
     }
 }

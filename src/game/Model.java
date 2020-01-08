@@ -1,7 +1,6 @@
 package game;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static game.PuyoPairState.*;
@@ -20,6 +19,9 @@ public class Model {
     private boolean loose;
     private Thread t;
 
+    /**
+     * Initializes the Attributes
+     */
     public Model(){
         this.x =12;
         this.y =24;
@@ -34,12 +36,22 @@ public class Model {
         this.next = new PuyoPair();
     }
 
+    /**
+     * Called by the Controllers initialize Method
+     * Starts the thread that drops the puyos
+     */
     public void drop(){
         Fall f = new Fall(this);
         this.t = new Thread(f);
         t.start();
     }
 
+    /**
+     * Sets the old next PuyoPair as the current PuyoPair
+     * Sets the State to HorizontalOneTwo
+     * Adds the new curPuyo into the map.
+     * should the puyos have reached the ceiling the loose method is called
+     */
     public void newPuyoPair(){
         this.curPuyo = this.next;
         this.next = new PuyoPair();
@@ -50,6 +62,9 @@ public class Model {
             loose();
     }
 
+    /**
+     * Sets the loose attribute to true and joins the fall thread
+     */
     private void loose() {
         this.loose = true;
         try {
@@ -59,14 +74,32 @@ public class Model {
         }
     }
 
+    /**
+     * Sets a passed Puyo into the map using the passed coordinates
+     * @param x
+     * @param y
+     * @param p
+     */
     public void setPuyo(int x, int y, Puyo p){
             this.map[x][y] = p;
     }
 
+    /**
+     * Removes a Puyo from the field corresponding to the passed coordinates by instantiating a new empty field
+     * @param x
+     * @param y
+     */
     public void remPuyo(int x, int y){
         this.map[x][y] = new Field(x,y);
     }
 
+    /**
+     * Called when 4 or more Puyos touch
+     * removes the Puyo coresponding with the passed coordinates
+     * checks if the fields above are puyos and drops them
+     * @param x
+     * @param y
+     */
     public void collapse(int x, int y){
         this.map[x][y] = new Field(x,y);
         if (this.map[x][y - 1].getClass() == Puyo.class&&y>0) {
@@ -77,6 +110,11 @@ public class Model {
         }
     }
 
+    /**
+     * Checks if the passed coordinate is a viable y coordinate
+     * @param y
+     * @return true if viable
+     */
     private boolean checky(int y) {
         if(y<0||y>=this.y){
             return false;
@@ -84,6 +122,11 @@ public class Model {
         return true;
     }
 
+    /**
+     * Checks if the passed coordinate is a viable x coordinate
+     * @param x
+     * @return true if viable
+     */
     private boolean checkx(int x) {
         if(x<0||x>=this.x){
             return false;
@@ -91,6 +134,12 @@ public class Model {
         return true;
     }
 
+    /**
+     * Moves the Current puyos by the passed shift value
+     * First checks if the new Coordinates are viable for both puyos
+     * @param x shift
+     * @param y shift
+     */
     public void move(int x, int y){
         int oldpuyo1y = this.curPuyo.getPuyo1().getY();
         int newpuyo1y = this.curPuyo.getPuyo1().getY()+y;
@@ -105,6 +154,7 @@ public class Model {
         int newpuyo2x = this.curPuyo.getPuyo2().getX()+x;
 
         if(checkx(newpuyo1x)&&checkx(newpuyo2x)&&checky(newpuyo1y)&&checky(newpuyo2y)) {
+
             this.curPuyo.getPuyo1().setX(newpuyo1x);
             this.curPuyo.getPuyo1().setY(newpuyo1y);
 
@@ -119,16 +169,12 @@ public class Model {
         }
     }
 
-    public void turnMove(int x, int y, int xo, int yo){
-        if (checkx(x) && checky(y)) {
-            remPuyo(xo, yo);
-            this.curPuyo.getPuyo1().setX(x);
-            this.curPuyo.getPuyo1().setY(y);
-            setPuyo(x, y, this.curPuyo.getPuyo1());
-        }
-    }
-
-    //+left clock -right counterclock
+    /**
+     * Either turns the current Puyopair clock or counter clockwise
+     * Calculates the new Coordinates depending on the puyos state and the rotation direction
+     * if the new Coordinates are viable the turnMove method is called
+     * @param clock
+     */
     public void turn(boolean clock){
         int oldx = this.curPuyo.getPuyo1().getX();
         int oldy = this.curPuyo.getPuyo1().getY();
@@ -208,10 +254,27 @@ public class Model {
         }
     }
 
-    public void chain(List<Field> tokill){
-        tokill.forEach(p->remPuyo(p.getX(),p.getY()));
+    /**
+     * Passes the Puyos old and new Coordinates and moves them accordingly, also removing the old ones
+     * @param x
+     * @param y
+     * @param xo
+     * @param yo
+     */
+    public void turnMove(int x, int y, int xo, int yo){
+        if (checkx(x) && checky(y)) {
+            remPuyo(xo, yo);
+            this.curPuyo.getPuyo1().setX(x);
+            this.curPuyo.getPuyo1().setY(y);
+            setPuyo(x, y, this.curPuyo.getPuyo1());
+        }
     }
 
+    /**
+     * Checks the fields below the current puyo pair depending on its state
+     * if both touch the ground bothDown() is called
+     * if one touches another puyo the other one is fast dropped by calling fastdrop(Puyo p)
+     */
     public void checkBelow() {
         switch (state){
             case HOT:
@@ -243,6 +306,10 @@ public class Model {
         }
     }
 
+    /**
+     * Sets both puyos floating attribute to false
+     * checks for a chain and instantiates a new PuyoPair
+     */
     public void bothDown(){
         curPuyo.getPuyo1().setFloating(false);
         curPuyo.getPuyo2().setFloating(false);
@@ -251,6 +318,10 @@ public class Model {
         newPuyoPair();
     }
 
+    /**
+     * Depending on the state checks the left side of the Current puyopair for viable coordinates
+     * @return true if viable
+     */
     public boolean checkLeft() {
         switch (state){
             case VTO:
@@ -271,12 +342,22 @@ public class Model {
         return true;
     }
 
+    /**
+     * Checks if the filed corresponding to the passed parameters contains a puyo
+     * @param x
+     * @param y
+     * @return true if contains puyo
+     */
     public boolean checkFieldForPuyo(int x,int y){
         if(map[x][y].getClass()==Puyo.class)
             return true;
         return false;
     }
 
+    /**
+     * Depending on the state checks the right side of the Current puyopair for viable coordinates
+     * @return true if viable
+     */
     public boolean checkRight() {
         switch (state){
             case VOT:
@@ -296,45 +377,11 @@ public class Model {
         }
         return true;
     }
+
     /**
-    private void fastdrop(int i){
-        if(i == 1){
-            while (map[curPuyo.getPuyo1().getX()][curPuyo.getPuyo1().getY()+1].getClass()!=Puyo.class){
-                int oldpuyo1y = this.curPuyo.getPuyo1().getY();
-                remPuyo(this.curPuyo.getPuyo1().getX(),oldpuyo1y);
-                this.curPuyo.getPuyo1().setY(oldpuyo1y+1);
-                this.setPuyo(this.curPuyo.getPuyo1().getX(),this.curPuyo.getPuyo1().getY(),1);
-                if(this.curPuyo.getPuyo1().getY()+1==y) {
-                    curPuyo.getPuyo1().setFloating(false);
-                    check(curPuyo.getPuyo1());
-                    check(curPuyo.getPuyo2());
-                    break;
-                }
-            }
-            curPuyo.getPuyo1().setFloating(false);
-            check(curPuyo.getPuyo1());
-            check(curPuyo.getPuyo2());
-            newPuyoPair();
-        }else if(i==2){
-            while (map[curPuyo.getPuyo2().getX()][curPuyo.getPuyo2().getY()+1].getClass()!=Puyo.class){
-                int oldpuyo2y = this.curPuyo.getPuyo2().getY();
-                remPuyo(this.curPuyo.getPuyo2().getX(),oldpuyo2y);
-                this.curPuyo.getPuyo2().setY(oldpuyo2y+1);
-                this.setPuyo(this.curPuyo.getPuyo2().getX(),this.curPuyo.getPuyo2().getY(),2);
-                if(this.curPuyo.getPuyo2().getY()+1==y) {
-                    curPuyo.getPuyo2().setFloating(false);
-                    check(curPuyo.getPuyo1());
-                    check(curPuyo.getPuyo2());
-                    break;
-                }
-            }
-            curPuyo.getPuyo2().setFloating(false);
-            check(curPuyo.getPuyo1());
-            check(curPuyo.getPuyo2());
-            newPuyoPair();
-        }
-    }
-*/
+     * Drops the passed puyo to the lowest possible empty field
+     * @param p
+     */
     private void fastdrop(Puyo p){
         while (map[p.getX()][p.getY()+1].getClass()!=Puyo.class){
             int oldpuyo1y = p.getY();
@@ -360,20 +407,33 @@ public class Model {
         newPuyoPair();
     }
 
+    /**
+     * recursively checks if the passed puyo is part of a chain of 4 or more
+     * adds the passed puyo into toCheck and calls chainStart
+     * @param puyo
+     */
     private void check(Puyo puyo) {
         this.checked = new ArrayList<>();
         this.toCheck = new ArrayList<>();
         this.toCheck.add(puyo);
         int i = 0;
         chainStart(i);
-        if(this.checked.size()>=4){
-            this.checked.forEach(p->{
+        Set<Puyo> s = new HashSet(this.checked);
+        if(s.size()>=4){
+            s.forEach(p->{
                 collapse(p.getX(),p.getY());
                 this.score++;
             });
         }
     }
 
+    /**
+     * Start of the recursive checking with the puyo in the toCheck list corresponding to the passed parameter
+     * calls chainL,R,U & D
+     * Checks if toCheck is Equal with checked, in that case the recursion stops
+     * otherwise this method is called again with an increased value
+     * @param i
+     */
     public void chainStart(int i){
         this.checked.add(toCheck.get(i));
         int x = toCheck.get(i).getX();
@@ -393,68 +453,67 @@ public class Model {
         }
     }
 
+    /**
+     * Checks if the field on the left contains a puyo with the same color, in that case the method is called again with an altered x parameter
+     * @param x
+     * @param y
+     */
     public void chainL(int x, int y){
         if(x>0){
-            if(map[x-1][y].getClass()==Puyo.class&&((Puyo)map[x-1][y]).getColor()==((Puyo)map[x][y]).getColor()){
+            if(map[x-1][y].getClass()==Puyo.class&&map[x][y].getClass()==Puyo.class&&((Puyo)map[x-1][y]).getColor()==((Puyo)map[x][y]).getColor()&&map[x-1][y]!=map[x][y]){
                 this.toCheck.add((Puyo)map[x-1][y]);
                 chainL(x-1,y);
             }
         }
     }
+
+    /**
+     * Checks if the field on the right contains a puyo with the same color, in that case the method is called again with an altered x parameter
+     * @param x
+     * @param y
+     */
     public void chainR(int x, int y){
         if(x<this.x-1){
-            if(map[x+1][y].getClass()==Puyo.class&&((Puyo)map[x+1][y]).getColor()==((Puyo)map[x][y]).getColor()){
+            if(map[x+1][y].getClass()==Puyo.class&&map[x][y].getClass()==Puyo.class&&((Puyo)map[x+1][y]).getColor()==((Puyo)map[x][y]).getColor()&&map[x+1][y]!=map[x][y]){
                 this.toCheck.add((Puyo)map[x+1][y]);
                 chainR(x+1,y);
             }
         }
     }
+
+    /**
+     * Checks if the field below contains a puyo with the same color, in that case the method is called again with an altered y parameter
+     * @param x
+     * @param y
+     */
     public void chainD(int x, int y){
         if(y<this.y-1){
-            if(map[x][y+1].getClass()==Puyo.class&&((Puyo)map[x][y+1]).getColor()==((Puyo)map[x][y]).getColor()){
+            if(map[x][y+1].getClass()==Puyo.class&&map[x][y].getClass()==Puyo.class&&((Puyo)map[x][y+1]).getColor()==((Puyo)map[x][y]).getColor()&&map[x][y+1]!=map[x][y]){
                 this.toCheck.add((Puyo)map[x][y+1]);
                 chainD(x,y+1);
             }
         }
     }
+
+    /**
+     * Checks if the field above contains a puyo with the same color, in that case the method is called again with an altered y parameter
+     * @param x
+     * @param y
+     */
     public void chainU(int x, int y){
         if(y>0){
-            if(map[x][y-1].getClass()==Puyo.class&&((Puyo)map[x][y-1]).getColor()==((Puyo)map[x][y]).getColor()){
+            if(map[x][y-1].getClass()==Puyo.class&&map[x][y].getClass()==Puyo.class&&((Puyo)map[x][y-1]).getColor()==((Puyo)map[x][y]).getColor()&&map[x][y-1]!=map[x][y]){
                 this.toCheck.add((Puyo)map[x][y-1]);
                 chainU(x,y-1);
             }
         }
     }
 
-    public List<Field> getNeighbors(Field cur){
-        List<Field> neighbors = new ArrayList<>();
-        //  f
-        // fXf
-        //  f
-
-        int[] toAdd = {
-                0, 1,
-                -1, 0,
-                1, 0,
-                0,-1
-        };
-
-        for(int i = 0;i<toAdd.length;i++){
-            int toAddX = cur.getX()+toAdd[i];
-            int toAddY = cur.getY()+toAdd[++i];
-            if(toAddX >=0 && toAddX<this.x&&toAddY>=0&&toAddY<this.y){
-                Field temp =map[toAddX][toAddY];
-                if(temp.getClass()==Puyo.class && !((Puyo) temp).isFloating() && ((Puyo) temp).getColor() == ((Puyo) cur).getColor()) {
-                    neighbors.add(temp);
-                }
-            }
-        }
-        return neighbors;
-    }
-
     public Field[][] getMap() {
         return map;
     }
+
+    //Setter and Getter Methods
 
     public void setMap(Field[][] map) {
         this.map = map;

@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import java.io.File;
+import java.io.IOException;
 
 public class Main extends Application implements EventHandler<WindowEvent> {
 
@@ -18,11 +19,22 @@ public class Main extends Application implements EventHandler<WindowEvent> {
     MediaPlayer mediaPlayer;
     Stage primaryStage;
 
+    /**
+     * Start method sets up the javafx application
+     * Loads the scene and plays the music.
+     * @param primaryStage
+     * @throws Exception
+     */
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage){
         this.primaryStage = primaryStage;
         FXMLLoader loader = new FXMLLoader(getClass().getResource("sample.fxml"));
-        Parent root = loader.load();
+        Parent root = null;
+        try {
+            root = loader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.c = loader.getController();
         primaryStage.setTitle("PuyoPuyo");
         Scene scene = new Scene(root, 300, 550);
@@ -40,10 +52,19 @@ public class Main extends Application implements EventHandler<WindowEvent> {
     }
 
 
+    /**
+     * Launches the application
+     * @param args
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Called when window is closed
+     * Joins the threads
+     * @param event
+     */
     @Override
     public void handle(WindowEvent event) {
         c.loose();

@@ -13,26 +13,6 @@ public class PuyoPair {
         this.puyo2 = new Puyo(6,0, r2);
     }
 
-    public void turnLeft(){
-
-    }
-
-    public void turnRight(){
-
-    }
-
-    public void left(){
-
-    }
-
-    public void right(){
-
-    }
-
-    public void down(){
-
-    }
-
     public Puyo getPuyo1() {
         return puyo1;
     }
@@ -49,13 +29,4 @@ public class PuyoPair {
         this.puyo2 = puyo2;
     }
 
-    public void setPuyo2pos(int x, int y) {
-        this.puyo2.setX(x);
-        this.puyo2.setY(y);
-    }
-
-    public void setPuyo1pos(int x, int y) {
-        this.puyo1.setX(x);
-        this.puyo1.setY(y);
-    }
 }
